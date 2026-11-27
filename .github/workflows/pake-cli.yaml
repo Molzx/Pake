@@ -225,8 +225,18 @@ jobs:
             $args += "--new-window"
           }
 
+          # WiX MSI uses a single code page; CJK app names need a matching
+          # locale or light.exe fails with LGHT0311 (code page 1252).
+          if ($env:INPUT_NAME -match '[^\x00-\x7F]') {
+            $args += "--installer-language", "zh-CN"
+          }
+
           Write-Host "Running: node dist/cli.js $($args -join ' ')"
           node dist/cli.js $args
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Pake CLI failed with exit code $LASTEXITCODE"
+            exit $LASTEXITCODE
+          }
 
           git checkout -- src-tauri/Cargo.lock
 
